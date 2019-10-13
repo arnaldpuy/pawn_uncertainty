@@ -331,8 +331,8 @@ sobol.convergence[sensitivity == "STi"] %>%
 # PLOT SOBOL' AND PAWN INDICES ------------------------------------------------
 
 # Sobol' indices
-a <- plot_sobol(sobol.convergence[N==max(N)], 
-                dummy = sobol.dummy.final[N==max(N)]) +
+a <- plot_sobol(sobol.convergence[N==4000], 
+                dummy = sobol.dummy.final[N==4000]) +
   facet_grid(~model, 
              scales = "free_x", 
              space = "free_x") +
@@ -346,9 +346,9 @@ legend <- get_legend(a + theme(legend.position = "top"))
 
 
 # PAWN indices
-b <- pawn.convergence[N==max(N)] %>%
+b <- pawn.convergence[N==4000] %>%
   plot_pawn(.) +
-  geom_rect(data = pawn.index.dummy[N==max(N)],
+  geom_rect(data = pawn.index.dummy[N==4000],
             aes(ymin = 0,
                 ymax = high.ci,
                 xmin = -Inf,
@@ -357,7 +357,7 @@ b <- pawn.convergence[N==max(N)] %>%
             alpha = 0.1,
             inherit.aes = FALSE) +
   labs(x = "", 
-       y = "PAWN index") +
+       y = "PAWN") +
   facet_grid(~ model, 
              scales = "free_x", 
              space = "free_x") +
@@ -463,7 +463,7 @@ model_pawn <- function(Model, N, n, epsilon, theta) {
 # DEFINE SETTINGS --------------------------------------------------------------
 
 # Set sample size
-n <- 2 ^ 12
+n <- 2 ^ 13
 
 # Define N.min and N.max
 N.min <- 200
@@ -585,7 +585,7 @@ for(i in seq_along(1:4)) {
 # DATASET FOR UNCERTAINTY ANALYSIS --------------------------------------------
 
 AB.pawn <- lapply(dt.models, function(x)  {
-  x[, .SD[1: (2 * (2 ^ 12))], setting] %>%
+  x[, .SD[1: (2 * (2 ^ 13))], setting] %>%
     melt(., measure.vars = patterns("V"), 
          variable.name = "parameter")
   }) %>%
@@ -705,7 +705,7 @@ fwrite(dt.pawn.sens, "dt.pawn.sens.csv")
 pawn.sensitivity <- dt.pawn.sens[, sobol_indices(Y, 
                                                  params = parameters,
                                                  R = R, 
-                                                 n = 2 ^ 12, 
+                                                 n = 2 ^ 13, 
                                                  parallel = "multicore", 
                                                  second = TRUE, 
                                                  third = TRUE,
@@ -986,7 +986,7 @@ for(i in seq_along(1:4)) {
 # DATASET FOR UNCERTAINTY ANALYSIS --------------------------------------------
 
 AB.sobol <- lapply(dt.models, function(x) {
-  x[, .SD[1: (2 * (2 ^ 12))], setting] %>% 
+  x[, .SD[1: (2 * (2 ^ 13))], setting] %>% 
   melt(., measure.vars = patterns("V"), 
        variable.name = "parameter")}) %>%
   rbindlist(.) %>%
@@ -1103,7 +1103,7 @@ fwrite(full.dataset.sobol, "full.dataset.sobol.csv")
 sobol.sensitivity <- full.dataset.sobol[, sobol_indices(value, 
                                                         type = "jansen", 
                                                         params = parameters.sobol, 
-                                                        n = 2 ^ 12, 
+                                                        n = 2 ^ 13, 
                                                         R = R, 
                                                         parallel = "multicore", 
                                                         ncpus = n_cores), 
