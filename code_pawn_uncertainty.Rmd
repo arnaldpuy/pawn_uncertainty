@@ -1338,14 +1338,18 @@ plot_grid(legend, all[[1]],
 lapply(2:3, function(x) all[x])
 ```
 
-```{r plot_morris, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=10, fig.width=7}
+```{r plot_morris, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=10, fig.width=5}
 
 # PLOT SOBOL' INDICES FOR THE MORRIS FUNCTION ---------------------------------
 
-lapply(1:3, function(x) gg[[4]][[x]])
+plot_grid(legend, gg[[4]][[1]], 
+          ncol = 1, 
+          rel_heights = c(0.07, 1))
+
+lapply(2:3, function(x) gg[[4]][[x]])
 ```
 
-```{r merge_second_third, cahce=TRUE, dependson="pawn_ci", dev="tikz", fig.height=3}
+```{r merge_second_third, cahce=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.7}
 
 # MERGE SECOND AND THIRD-ORDER EFFECTS -----------------------------------------
 
@@ -1364,6 +1368,7 @@ for(i in second.third) {
     geom_hline(yintercept = 0,
                lty = 2,
                color = "red") +
+    scale_y_continuous(breaks = pretty_breaks(n = 3)) +
     facet_wrap(~ setting) +
     theme(legend.position = "none", 
           panel.grid.major = element_blank(),
@@ -1415,4 +1420,57 @@ final.pawn.ci[sensitivity == "Si" |sensitivity == "STi"] %>%
         legend.key = element_rect(fill = "transparent",  
                                   color = NA),
         legend.position = "top")
+```
+
+```{r plot_sobol_functions, cache=TRUE, dependson="sobol_ci", dev="tikz", fig.height=8, fig.width=4.5}
+
+# PLOT DESIGN PARAMETERS FOR SOBOL: ALL FUNCTIONS -----------------------------
+
+tmp <- final.sobol[!setting == "N"] %>%
+  split(., .$Model)
+gg <- list()
+for(i in names(tmp)) {
+    gg[[i]] <- plot_sobol(tmp[[i]], type = 1) +
+      scale_y_continuous(breaks = pretty_breaks(n = 3)) +
+      facet_grid(model.input ~.) +
+      labs(x = "", 
+           y = "Sobol' indices") +
+      theme(legend.position = "none")
+}
+
+# Extract legend
+legend <- get_legend(gg[[1]] + theme(legend.position = "top"))
+
+# PLOT SOBOL' INDICES FOR LIU, ISHIGAMI AND SOBOL' G --------------------------
+
+left <- plot_grid(gg[[1]], gg[[2]],
+                  labels = c("a", "b"),
+                  align = "h",
+                  ncol = 1)
+all <- plot_grid(left, gg[[3]], 
+                 labels = c("", "c"), 
+                 ncol = 2)
+
+plot_grid(legend, all, 
+          ncol = 1, 
+          rel_heights = c(0.1, 1))
+```
+
+```{r plot_morris_sobol, cache=TRUE, dependson="sobol_ci", dev="tikz", fig.height=10, fig.width=3}
+
+# PLOT SOBOL' INDICES FOR THE MORRIS FUNCTION ---------------------------------
+
+plot_grid(legend, gg[[4]], 
+          ncol = 1, 
+          rel_heights = c(0.07, 1))
+```
+
+# Session information
+
+```{r session_information}
+
+# SESSION INFORMATION ---------------------------------------------------------
+
+sessionInfo()
+
 ```

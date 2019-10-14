@@ -1,7 +1,40 @@
+#' ---
+#' title: "A sensitivity analysis of the PAWN sensitivity index"
+#' author: "Arnald Puy, Samuele Lo Piano, Andrea Saltelli"
+#' header-includes:
+#'   - \usepackage[font=footnotesize]{caption}
+#'   - \usepackage{dirtytalk}
+#'   - \usepackage{booktabs}
+#'   - \usepackage{tabulary}
+#'   - \usepackage{enumitem}
+#'   - \usepackage{lmodern}
+#'   - \usepackage[T1]{fontenc}
+#' output:
+#'   pdf_document:
+#'     fig_caption: yes
+#'     number_sections: yes
+#'     toc: yes
+#'     toc_depth: 2
+#'     keep_tex: true
+#'   word_document:
+#'     toc: no
+#'     toc_depth: '2'
+#'   html_document:
+#'     keep_md: true
+#' link-citations: yes
+#' fontsize: 11pt
+#' bibliography: /Users/arnald/Documents/bibtex/LATEX_density.bib
+#' 
+#' ---
+#' 
 ## ----setup, include=FALSE------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
-
+#' 
+#' \newpage
+#' 
+#' # Preliminary functions
+#' 
 ## ----preliminary steps, results="hide", message=FALSE, warning=FALSE-----
 
 # PRELIMINARY FUNCTIONS -------------------------------------------------------
@@ -33,7 +66,9 @@ checkpoint("2019-09-22",
            R.version ="3.6.1", 
            checkpointLocation = getwd())
 
-
+#' 
+#' # Check convergence of Sobol' indices and PAWN
+#' 
 ## ----settings, cache = TRUE----------------------------------------------
 
 # DEFINE SETTINGS -------------------------------------------------------------
@@ -60,7 +95,9 @@ liu_Mapply <- function(X) {
   return(mapply(liu, X[, 1], X[, 2]))
 }
 
-
+#' 
+#' ## Sample matrix
+#' 
 ## ----sample_matrices, cache=TRUE, dependson="settings"-------------------
 
 # CONSTRUCT SAMPLE MATRICES ---------------------------------------------------
@@ -77,7 +114,9 @@ for(i in names(A)) {
   names(A[[i]]) <- N
 }
 
-
+#' 
+#' ## Model output
+#' 
 ## ----output, cache=TRUE, dependson="sample_matrices"---------------------
 
 # COMPUTE MODEL OUTPUT --------------------------------------------------------
@@ -100,7 +139,7 @@ for(i in names(Y)) {
   names(Y[[i]]) <- N
 }
 
-
+#' 
 ## ----model_uncertainty, cache=TRUE, dependson="output", dev="tikz"-------
 
 # PLOT MODEL UNCERTAINTY ------------------------------------------------------
@@ -128,7 +167,9 @@ lapply(models, function(models) Y[[models]]$`10000`) %>%
         legend.key = element_rect(fill = "transparent",
                                   color = NA))
 
-
+#' 
+#' ## Sobol' indices
+#' 
 ## ----sobol_indices, cache=TRUE, dependson="output"-----------------------
 
 # COMPUTE SOBOL' INDICES AND THEIR CONFIDENCE INTERVALS -----------------------
@@ -150,7 +191,7 @@ for(i in names(A)) {
   }
 }
 
-
+#' 
 ## ----sobol_indices_dummy, cache=TRUE, dependson="sobol_indices"----------
 
 # SOBOL INDICES AND CONFIDENCE INTERVALS OF DUMMY PARAMETER -------------------
@@ -175,7 +216,7 @@ sobol.dummy.final <- lapply(sobol.dummy.ci, function(x) rbindlist(x, idcol = "N"
   .[, model:= factor(model, levels = c("Liu", "Ishigami", 
                                        "Sobol' G", "Morris"))]
 
-
+#' 
 ## ----sobol_convergence_dt, cache=TRUE, dependson="sobol_indices"---------
 
 # SOBOL' CONVERGENCE ---------------------------------------------------------
@@ -191,7 +232,9 @@ sobol.convergence <- lapply(out.ci, function(x) rbindlist(x, idcol = "N")) %>%
   .[, method:= "Sobol' $S_{Ti}$"] %>%
   .[, .(model, N, parameters, original, low.ci, high.ci, diff, method, sensitivity)]
 
-
+#' 
+#' ## PAWN
+#' 
 ## ----pawn_indices, cache=TRUE, dependson=c("sample_matrices", "output")----
 
 # COMPUTE PAWN INDICES AND THEIR CONFIDENCE INTERVALS -------------------------
@@ -218,7 +261,7 @@ for(i in names(A.pawn)) {
   }
 }
 
-
+#' 
 ## ----pawn_dummy, cache=TRUE, dependson=c("sample_matrices", "output", "pawn_indices")----
 
 # PAWN AND CONFIDENCE INTERVALS OF DUMMY PARAMETER ----------------------------
@@ -237,7 +280,7 @@ pawn.index.dummy <- lapply(pawn.index.dummy, function(x) rbindlist(x, idcol = "N
   .[, model:= factor(model, levels = c(c("Liu", "Ishigami", 
                                          "Sobol' G", "Morris")))]
 
-
+#' 
 ## ----pawn_convergence_dt, cache=TRUE, dependson="pawn_indices"-----------
 
 # PAWN CONVERGENCE ------------------------------------------------------------
@@ -253,7 +296,9 @@ pawn.convergence <- lapply(pawn.ci, function(x) rbindlist(x, idcol = "N")) %>%
                           levels = paste("X", 1:20, sep = ""))] %>%
   .[, method:= "PAWN"]
 
-
+#' 
+#' ## Plot convergence
+#' 
 ## ----plot_convergence, cache=TRUE, dependson=c("sobol_convergence_dt", "pawn_convergence_dt"), fig.height=4, fig.width=6.3, dev="tikz"----
 
 # PLOT CONVERGENCE ------------------------------------------------------------
@@ -280,14 +325,14 @@ sobol.convergence[sensitivity == "STi"] %>%
         legend.key = element_rect(fill = "transparent",
                                   color = NA))
 
-
+#' 
 ## ----plot_full_convergence, cache=TRUE, dependson=c("sobol_convergence.dt", "pawn_convergence_dt"), dev="tikz"----
 
 # PLOT SOBOL' AND PAWN INDICES ------------------------------------------------
 
 # Sobol' indices
-a <- plot_sobol(sobol.convergence[N==max(N)], 
-                dummy = sobol.dummy.final[N==max(N)]) +
+a <- plot_sobol(sobol.convergence[N==4000], 
+                dummy = sobol.dummy.final[N==4000]) +
   facet_grid(~model, 
              scales = "free_x", 
              space = "free_x") +
@@ -301,9 +346,9 @@ legend <- get_legend(a + theme(legend.position = "top"))
 
 
 # PAWN indices
-b <- pawn.convergence[N==max(N)] %>%
+b <- pawn.convergence[N==4000] %>%
   plot_pawn(.) +
-  geom_rect(data = pawn.index.dummy[N==max(N)],
+  geom_rect(data = pawn.index.dummy[N==4000],
             aes(ymin = 0,
                 ymax = high.ci,
                 xmin = -Inf,
@@ -312,7 +357,7 @@ b <- pawn.convergence[N==max(N)] %>%
             alpha = 0.1,
             inherit.aes = FALSE) +
   labs(x = "", 
-       y = "PAWN index") +
+       y = "PAWN") +
   facet_grid(~ model, 
              scales = "free_x", 
              space = "free_x") +
@@ -330,7 +375,7 @@ plot_grid(legend, bottom,
           align = "", 
           rel_heights = c(0.1, 1))
 
-
+#' 
 ## ----plot_convergence2, cache=TRUE, dependson="plot_full_convergence", dev="tikz", fig.height=2, fig.width=6.5----
 
 # PLOT SOBOL' AND PAWN INDICES (INDIVIDUAL PLOTS) -----------------------------
@@ -338,7 +383,11 @@ plot_grid(legend, bottom,
 a
 b
 
-
+#' 
+#' # Sensitivity of PAWN to its design parameters
+#' 
+#' ## The model
+#' 
 ## ----pawn_model, cache=TRUE----------------------------------------------
 
 # THE MODEL -------------------------------------------------------------------
@@ -406,13 +455,15 @@ model_pawn <- function(Model, N, n, epsilon, theta) {
   return(final)
 }
 
-
+#' 
+#' ## Settings
+#' 
 ## ----pawn_settings, cache=TRUE-------------------------------------------
 
 # DEFINE SETTINGS --------------------------------------------------------------
 
 # Set sample size
-n <- 2 ^ 12
+n <- 2 ^ 13
 
 # Define N.min and N.max
 N.min <- 200
@@ -424,7 +475,9 @@ parameters <- c("N", "n", "epsilon", "theta")
 # Vector with name of functions
 models <- c("Liu", "Ishigami", "Sobol' G", "Morris")
 
-
+#' 
+#' ## Sample matrix
+#' 
 ## ----pawn_matrix, cache=TRUE, dependson="pawn_settings"------------------
 
 # CREATION OF THE MATRICES ----------------------------------------------------
@@ -481,7 +534,9 @@ A.pawn <- rbindlist(A, idcol = "setting")[
 
 print(A.pawn)
 
-
+#' 
+#' ## Run the model
+#' 
 ## ----run_pawn_model, cache=TRUE, dependson=c("pawn_matrices", "pawn_model", "pawn_settings")----
 
 # RUN MODEL -------------------------------------------------------------------
@@ -504,7 +559,7 @@ Y.pawn <- foreach(i=1:nrow(A.pawn),
 # Stop parallel cluster
 stopCluster(cl)
 
-
+#' 
 ## ----extract_pawn_data, cache=TRUE, dependson="run_pawn_model"-----------
 
 # EXTRACT DATA ----------------------------------------------------------------
@@ -522,13 +577,15 @@ for(i in seq_along(1:4)) {
   dt.models[[i]] <- cbind(A.pawn[Model == i], data.table(do.call(rbind, out[[i]])))
 }
 
-
+#' 
+#' ## Uncertainty analysis
+#' 
 ## ----uncertainty_dt, cache=TRUE, dependson="extract_pawn_data"-----------
 
 # DATASET FOR UNCERTAINTY ANALYSIS --------------------------------------------
 
 AB.pawn <- lapply(dt.models, function(x)  {
-  x[, .SD[1: (2 * (2 ^ 12))], setting] %>%
+  x[, .SD[1: (2 * (2 ^ 13))], setting] %>%
     melt(., measure.vars = patterns("V"), 
          variable.name = "parameter")
   }) %>%
@@ -544,7 +601,7 @@ AB.pawn <- lapply(dt.models, function(x)  {
   .[, setting:= ifelse(setting == "max", "$max \\in \\theta$", 
                       ifelse(setting == "no.max", "$max \\notin \\theta$", "Optimum"))]
 
-
+#' 
 ## ----pawn_overlap, cache=TRUE, dependson="uncertainty_dt"----------------
 
 # CHECK OVERLAP ---------------------------------------------------------------
@@ -580,7 +637,7 @@ final.overlap
 rbindlist(final.overlap) %>%
   fwrite(., "pawn.overlap.csv")
 
-
+#' 
 ## ----plot_pawn_uncertainty, cache=TRUE, dependson="uncertainty_dt", dev="tikz"----
 
 # PLOT UNCERTAINTY ------------------------------------------------------------
@@ -609,14 +666,16 @@ plot.uncertainty.pawn <- ggplot(AB.pawn, aes(value,
 
 plot.uncertainty.pawn
 
-
+#' 
 ## ----export_pawn, cache=TRUE, dependson="uncertainty_dt"-----------------
 
 # EXPORT AB MATRIX FOR PAWN ---------------------------------------------------
 
 fwrite(AB.pawn, "AB.pawn.csv")
 
-
+#' 
+#' ## Sensitivity analysis
+#' 
 ## ----pawn_sensitivity_dt, cache=TRUE, dependson="extract_pawn_data"------
 
 # DATASET FOR SENSITIVITY ANALYSIS --------------------------------------------
@@ -638,7 +697,7 @@ dt.pawn.sens <- lapply(dt.models, function(x)
 
 fwrite(dt.pawn.sens, "dt.pawn.sens.csv")
 
-
+#' 
 ## ----pawn_sensitivity, cache=TRUE, dependson="pawn_sensitivity_dt"-------
 
 # SENSITIVITY ANALYSIS --------------------------------------------------------
@@ -646,14 +705,14 @@ fwrite(dt.pawn.sens, "dt.pawn.sens.csv")
 pawn.sensitivity <- dt.pawn.sens[, sobol_indices(Y, 
                                                  params = parameters,
                                                  R = R, 
-                                                 n = 2 ^ 12, 
+                                                 n = 2 ^ 13, 
                                                  parallel = "multicore", 
                                                  second = TRUE, 
                                                  third = TRUE,
                                                  ncpus = n_cores), 
                                  .(setting, Model, model.input)]
 
-
+#' 
 ## ----pawn_ci, cache=TRUE, dependson="pawn_sensitivity"-------------------
 
 # CONFIDENCE INTERVALS --------------------------------------------------------
@@ -695,7 +754,7 @@ final.pawn.ci <- lapply(pawn.ci, function(x)
 
 fwrite(final.pawn.ci, "final.pawn.ci.csv")
 
-
+#' 
 ## ----plot_pawn_sensitivity, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.7----
 
 # PLOT AGGREGATED SOBOL' INDICES ----------------------------------------------
@@ -749,7 +808,11 @@ plot_grid(up, bottom,
           align = "hv", 
           rel_heights = c(0.21, 1))
 
-
+#' 
+#' # Sensitivity of Sobol' indices to its design parameters
+#' 
+#' ## The model
+#' 
 ## ----sobol_model, cache=TRUE---------------------------------------------
 
 # THE MODEL -------------------------------------------------------------------
@@ -826,7 +889,9 @@ model_sobol <- function(Model, N, k, Theta) {
   return(out)
 }
 
-
+#' 
+#' ## Settings
+#' 
 ## ----sobol_settings, cache=TRUE------------------------------------------
 
 # DEFINE SETTINGS -------------------------------------------------------------
@@ -834,7 +899,9 @@ model_sobol <- function(Model, N, k, Theta) {
 # Set parameters
 parameters.sobol <- c("N", "Theta")
 
-
+#' 
+#' ## Sample matrix
+#' 
 ## ----sobol_matrix, cache=TRUE, dependson=c("pawn_settings", "sobol_settings")----
 
 # CREATION OF THE MATRICES ----------------------------------------------------
@@ -869,7 +936,9 @@ A.sobol <- A[, k:= ifelse(Model == 1, 2, ifelse(Model == 2, 3, ifelse(Model == 3
 print(A.sobol)
 print(n)
 
-
+#' 
+#' ## Run the model
+#' 
 ## ----run_sobol_model, cache=TRUE, dependson=c("pawn_matrices", "sobol_matrix", "sobol_settings", "sobol_model")----
 
 # RUN MODEL -------------------------------------------------------------------
@@ -891,7 +960,7 @@ Y.sobol <- foreach(i=1:nrow(A.sobol),
 # Stop parallel cluster
 stopCluster(cl)
 
-
+#' 
 ## ----extract_sobol_data, cache=TRUE, dependson="run_sobol_model"---------
 
 # EXTRACT MODEL OUTPUT --------------------------------------------------------
@@ -909,13 +978,15 @@ for(i in seq_along(1:4)) {
   dt.models[[i]] <- cbind(A[Model == i], data.table(do.call(rbind, out[[i]])))
 }
 
-
+#' 
+#' ## Uncertainty analysis
+#' 
 ## ----sobol_uncertainty_dt, cache=TRUE, dependson="extract_sobol_data"----
 
 # DATASET FOR UNCERTAINTY ANALYSIS --------------------------------------------
 
 AB.sobol <- lapply(dt.models, function(x) {
-  x[, .SD[1: (2 * (2 ^ 12))], setting] %>% 
+  x[, .SD[1: (2 * (2 ^ 13))], setting] %>% 
   melt(., measure.vars = patterns("V"), 
        variable.name = "parameter")}) %>%
   rbindlist(.) %>%
@@ -934,7 +1005,7 @@ AB.sobol <- lapply(dt.models, function(x) {
 
 fwrite(AB.sobol, "AB.sobol.csv")
 
-
+#' 
 ## ----plot_sobol_uncertainties, cache=TRUE, dependson="sobol_uncertainty_dt", dev="tikz"----
 
 # PLOT UNCERTAINTY ------------------------------------------------------------
@@ -962,7 +1033,7 @@ AB.sobol %>%
         legend.key = element_rect(fill = "transparent",  
                                   color = NA))
 
-
+#' 
 ## ----sobol_overlap, cache=TRUE, dependson="sobol_uncertainty_dt"---------
 
 # CHECK OVERLAP ---------------------------------------------------------------
@@ -998,7 +1069,9 @@ final.overlap
 rbindlist(final.overlap) %>%
   fwrite(., "sobol.overlap.csv")
 
-
+#' 
+#' ## Sensitivity analysis
+#' 
 ## ----sobol_sensitivity_dt, cache=TRUE, dependson="extract_sobol_data"----
 
 # DATASET FOR SENSITIVITY ANALYSIS --------------------------------------------
@@ -1022,7 +1095,7 @@ full.dataset.sobol <- lapply(dt.models, function(x)
 
 fwrite(full.dataset.sobol, "full.dataset.sobol.csv")
 
-
+#' 
 ## ----sobol_sensitivity, cache=TRUE, dependson="sobol_sensitivity_dt"-----
 
 # SENSITIVITY ANALYSIS --------------------------------------------------------
@@ -1030,13 +1103,13 @@ fwrite(full.dataset.sobol, "full.dataset.sobol.csv")
 sobol.sensitivity <- full.dataset.sobol[, sobol_indices(value, 
                                                         type = "jansen", 
                                                         params = parameters.sobol, 
-                                                        n = 2 ^ 12, 
+                                                        n = 2 ^ 13, 
                                                         R = R, 
                                                         parallel = "multicore", 
                                                         ncpus = n_cores), 
                                         .(Model, parameter, setting)]
 
-
+#' 
 ## ----sobol_ci, cache=TRUE, dependson="sobol_sensitivity"-----------------
 
 # CONFIDENCE INTERVALS --------------------------------------------------------
@@ -1073,7 +1146,7 @@ final.sobol <- lapply(out, function(x)
 
 fwrite(final.sobol, "final.sobol.csv")
 
-
+#' 
 ## ----plot_sobol, cache=TRUE, dependson="sobol_ci", dev="tikz", fig.height=2, fig.width=2.5----
 
 # PLOT SOBOL INDICES ----------------------------------------------------------
@@ -1096,7 +1169,9 @@ ggplot(final.sobol, aes(parameters, original,
                                   color = NA),
         legend.position = "none")
 
-
+#' 
+#' # Extra plots
+#' 
 ## ----global_uncertainty, cache=TRUE, fig.height=7, dependson=c("uncertainty_dt", "sobol_uncertainty_dt"), dev="tikz"----
 
 # MERGE UNCERTAINTY IN PAWN AND SOBOL'-----------------------------------------
@@ -1143,7 +1218,7 @@ plot_grid(legend, bottom,
           align = "", 
           rel_heights = c(0.2, 1))
 
-
+#' 
 ## ----global_sensitivities, dev="tikz", cache=TRUE, fig.height=2.5, dependson=c("pawn_ci", "sobol_ci")----
 
 # PLOT AGGREGATED SOBOL' INDICES ----------------------------------------------
@@ -1199,7 +1274,7 @@ plot_grid(legend, bottom,
           align = "hv", 
           rel_heights = c(0.21, 1))
 
-
+#' 
 ## ----plot_aggregated_Si, cache=TRUE, dev="tikz", fig.height=3, fig.width=3.1----
 
 # PLOT AGGREGATED SUM OF SI ---------------------------------------------------
@@ -1224,7 +1299,7 @@ rbind(final.pawn.ci[sensitivity == "Si"][, type:= "PAWN"],
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank())
 
-
+#' 
 ## ----plot_single_functions, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=8, fig.width=7----
 
 # ARRANGE TO PLOT SOBOL' INDICES FOR EACH FUNCTION ---------------------------
@@ -1262,15 +1337,19 @@ plot_grid(legend, all[[1]],
 
 lapply(2:3, function(x) all[x])
 
-
-## ----plot_morris, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=10, fig.width=7----
+#' 
+## ----plot_morris, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=10, fig.width=5----
 
 # PLOT SOBOL' INDICES FOR THE MORRIS FUNCTION ---------------------------------
 
-lapply(1:3, function(x) gg[[4]][[x]])
+plot_grid(legend, gg[[4]][[1]], 
+          ncol = 1, 
+          rel_heights = c(0.07, 1))
 
+lapply(2:3, function(x) gg[[4]][[x]])
 
-## ----merge_second_third, cahce=TRUE, dependson="pawn_ci", dev="tikz", fig.height=3----
+#' 
+## ----merge_second_third, cahce=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.7----
 
 # MERGE SECOND AND THIRD-ORDER EFFECTS -----------------------------------------
 
@@ -1289,6 +1368,7 @@ for(i in second.third) {
     geom_hline(yintercept = 0,
                lty = 2,
                color = "red") +
+    scale_y_continuous(breaks = pretty_breaks(n = 3)) +
     facet_wrap(~ setting) +
     theme(legend.position = "none", 
           panel.grid.major = element_blank(),
@@ -1305,7 +1385,7 @@ plot_grid(gg[[1]],
           labels = "auto",
           align = "hv")
 
-
+#' 
 ## ----sum_Si_weighted, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.5, fig.width=4.5----
 
 # PLOT AGGREGATED SOBOL' INDICES AFTER WEIGHTING ------------------------------
@@ -1340,4 +1420,66 @@ final.pawn.ci[sensitivity == "Si" |sensitivity == "STi"] %>%
         legend.key = element_rect(fill = "transparent",  
                                   color = NA),
         legend.position = "top")
+
+#' 
+## ----plot_sobol_functions, cache=TRUE, dependson="sobol_ci", dev="tikz", fig.height=8, fig.width=4.5----
+
+# PLOT DESIGN PARAMETERS FOR SOBOL: ALL FUNCTIONS -----------------------------
+
+tmp <- final.sobol[!setting == "N"] %>%
+  split(., .$Model)
+gg <- list()
+for(i in names(tmp)) {
+    gg[[i]] <- plot_sobol(tmp[[i]], type = 1) +
+      scale_y_continuous(breaks = pretty_breaks(n = 3)) +
+      facet_grid(model.input ~.) +
+      labs(x = "", 
+           y = "Sobol' indices") +
+      theme(legend.position = "none")
+}
+
+# Extract legend
+legend <- get_legend(gg[[1]] + theme(legend.position = "top"))
+
+# PLOT SOBOL' INDICES FOR LIU, ISHIGAMI AND SOBOL' G --------------------------
+
+left <- plot_grid(gg[[1]], gg[[2]],
+                  labels = c("a", "b"),
+                  align = "h",
+                  ncol = 1)
+all <- plot_grid(left, gg[[3]], 
+                 labels = c("", "c"), 
+                 ncol = 2)
+
+plot_grid(legend, all, 
+          ncol = 1, 
+          rel_heights = c(0.1, 1))
+
+#' 
+## ----plot_morris_sobol, cache=TRUE, dependson="sobol_ci", dev="tikz", fig.height=10, fig.width=3----
+
+# PLOT SOBOL' INDICES FOR THE MORRIS FUNCTION ---------------------------------
+
+plot_grid(legend, gg[[4]], 
+          ncol = 1, 
+          rel_heights = c(0.07, 1))
+
+#' 
+## ----create_r------------------------------------------------------------
+
+# CREATE R FILE ---------------------------------------------------------------
+
+knitr::purl("code_pawn_uncertainty.Rmd", 
+            output = "code_pawn_uncertainty.R", 
+            documentation = 2)
+
+#' 
+#' # Session information
+#' 
+## ----session_information-------------------------------------------------
+
+# SESSION INFORMATION ---------------------------------------------------------
+
+sessionInfo()
+
 
