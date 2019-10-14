@@ -1386,11 +1386,11 @@ plot_grid(gg[[1]],
           align = "hv")
 ```
 
-```{r sum_Si_weighted, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.5, fig.width=4.5}
+```{r sum_Si_weighted, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.5}
 
 # PLOT AGGREGATED SOBOL' INDICES AFTER WEIGHTING ------------------------------
 
-final.pawn.ci[sensitivity == "Si" |sensitivity == "STi"] %>%
+a <- final.pawn.ci[sensitivity == "Si" |sensitivity == "STi"] %>%
   # For each function, setting and design parameter, compute 
   # the median value of Si and STi
   .[, .(Median = median(original)), 
@@ -1413,13 +1413,55 @@ final.pawn.ci[sensitivity == "Si" |sensitivity == "STi"] %>%
                                   expression(S[italic(T[i])]))) +
   theme_bw() +
   facet_wrap(~ setting) +
-  theme(panel.grid.major = element_blank(), 
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), 
         legend.background = element_rect(fill = "transparent", 
                                          color = NA), 
         legend.key = element_rect(fill = "transparent",  
-                                  color = NA),
-        legend.position = "top")
+                                  color = NA))
+
+b <- final.sobol[!setting == "N"] %>%
+  # For each function, setting and design parameter, compute 
+  # the median value of Si and STi
+  .[, .(Median = median(original)), 
+    by = .(setting, Model, sensitivity, parameters)] %>%
+  # Compute the aggregated median and the percentiles
+  .[, .(aggregated.median = median(Median), 
+        low.ci = quantile(Median, probs = 0.025),
+        high.ci = quantile(Median, probs = 0.975)), 
+    by = .(setting, sensitivity, parameters)] %>%
+  ggplot(., aes(parameters, aggregated.median,
+                color = sensitivity)) +
+  geom_point(position = position_dodge(0.6)) +
+  geom_errorbar(aes(ymin = low.ci, 
+                    ymax = high.ci), 
+                position = position_dodge(0.6)) +
+  labs(x = "", 
+       y = NULL) +
+  scale_color_discrete(name = "Sobol' indices",
+                       labels = c(expression(S[italic(i)]),
+                                  expression(S[italic(T[i])]))) +
+  theme_bw() +
+  facet_wrap(~ setting) +
+  theme(legend.position = "none", 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        legend.background = element_rect(fill = "transparent", 
+                                         color = NA), 
+        legend.key = element_rect(fill = "transparent",  
+                                  color = NA))
+
+all <- plot_grid(a, b, 
+                 ncol = 2, 
+                 align = "hv",
+                 rel_widths = c(2.58, 1),
+                 labels = "auto")
+
+plot_grid(legend, all, 
+          ncol = 1, 
+          align = "hv", 
+          rel_heights = c(0.21, 1))
 ```
 
 ```{r plot_sobol_functions, cache=TRUE, dependson="sobol_ci", dev="tikz", fig.height=8, fig.width=4.5}
