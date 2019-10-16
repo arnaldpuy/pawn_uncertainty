@@ -229,7 +229,7 @@ sobol.convergence <- lapply(out.ci, function(x) rbindlist(x, idcol = "N")) %>%
                                        "Sobol' G", "Morris"))] %>%
   .[, parameters:= factor(parameters, 
                           levels = paste("X", 1:20, sep = ""))] %>%
-  .[, method:= "Sobol' $S_{Ti}$"] %>%
+  .[, method:= "$S_{Ti}^*$"] %>%
   .[, .(model, N, parameters, original, low.ci, high.ci, diff, method, sensitivity)]
 ```
 
@@ -297,6 +297,14 @@ pawn.convergence <- lapply(pawn.ci, function(x) rbindlist(x, idcol = "N")) %>%
   .[, method:= "PAWN"]
 ```
 
+```{r export_sobol_pawn_convergence, cache=TRUE, dependson=c("pawn_convergence_dt", "sobol_convergence_dt")}
+
+# EXPORT SOBOL' AND PAWN CONVERGENCE RATES ------------------------------------
+
+fwrite(sobol.convergence, "sobol.convergence.csv")
+fwrite(pawn.convergence, "pawn.convergence.csv")
+```
+
 ## Plot convergence
 
 ```{r plot_convergence, cache=TRUE, dependson=c("sobol_convergence_dt", "pawn_convergence_dt"), fig.height=4, fig.width=6.3, dev="tikz"}
@@ -305,11 +313,53 @@ pawn.convergence <- lapply(pawn.ci, function(x) rbindlist(x, idcol = "N")) %>%
 
 sobol.convergence[sensitivity == "STi"] %>%
   .[, sensitivity:= NULL] %>%
+  .[, method:= factor(method, levels = c("PAWN", "$S_{Ti}^*$"))] %>%
   rbind(., pawn.convergence) %>%
   ggplot(., aes(N, diff, 
                 group = parameters, 
                 color = parameters)) +
   geom_line() +
+  geom_hline(yintercept = 0.05, 
+             lty = 2) +
+  scale_color_discrete(name = "Model inputs") +
+  labs(y = expression(Stat[indices]), 
+       x = "N") +
+  facet_grid(method~model) +
+  theme_bw() +
+  theme(legend.position = "top",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.background = element_rect(fill = "transparent",
+                                         color = NA),
+        legend.key = element_rect(fill = "transparent",
+                                  color = NA))
+```
+
+```{r plot_convergence2_samples, cache=TRUE, dependson=c("sobol_convergence_dt", "pawn_convergence_dt"), fig.height=4, fig.width=6.3, dev="tikz"}
+
+# PLOT CONVERGENCE (SHOWING THE RANGE OF SAMPLES USED) ------------------------
+
+sobol.convergence[sensitivity == "STi"] %>%
+  .[, sensitivity:= NULL] %>%
+  rbind(., pawn.convergence) %>%
+  .[, method:= factor(method, levels = c("PAWN", "$S_{Ti}^*$"))] %>%
+  ggplot(., aes(N, diff, 
+                group = parameters, 
+                color = parameters)) +
+  geom_line() +
+  annotate("rect", 
+           xmin = 200, 
+           xmax = 2000, 
+           ymin = 0, 
+           ymax = Inf, 
+           alpha = 0.1, 
+           fill="red") +
+  annotate("rect", xmin = 2500, 
+           xmax = 4000, 
+           ymin = 0, 
+           ymax = Inf, 
+           alpha = 0.1, 
+           fill="green") +
   geom_hline(yintercept = 0.05, 
              lty = 2) +
   scale_color_discrete(name = "Model inputs") +
@@ -1312,7 +1362,7 @@ for(i in names(tmp)) {
       scale_y_continuous(breaks = pretty_breaks(n = 3)) +
       facet_grid(model.input ~ setting) +
       labs(x = "", 
-           y = "Sobol' indices") +
+           y = "Sobol' index") +
       theme(legend.position = "none")
   }
 }
@@ -1360,7 +1410,7 @@ for(i in second.third) {
     ggplot(., aes(parameters, original)) +
     geom_boxplot(outlier.size = 0.2) +
     labs(x = NULL,
-         y = "Sobol' indices") +
+         y = "Sobol' index") +
     scale_fill_discrete(name = "Sobol' indices",
                         labels = c(expression(S[italic(i)]),
                                    expression(S[italic(T[i])]))) +
@@ -1407,7 +1457,7 @@ a <- final.pawn.ci[sensitivity == "Si" |sensitivity == "STi"] %>%
                     ymax = high.ci), 
                 position = position_dodge(0.6)) +
   labs(x = "", 
-       y = "Sobol' indices") +
+       y = "Sobol' index") +
   scale_color_discrete(name = "Sobol' indices",
                        labels = c(expression(S[italic(i)]),
                                   expression(S[italic(T[i])]))) +
@@ -1476,7 +1526,7 @@ for(i in names(tmp)) {
       scale_y_continuous(breaks = pretty_breaks(n = 3)) +
       facet_grid(model.input ~.) +
       labs(x = "", 
-           y = "Sobol' indices") +
+           y = "Sobol' index") +
       theme(legend.position = "none")
 }
 
