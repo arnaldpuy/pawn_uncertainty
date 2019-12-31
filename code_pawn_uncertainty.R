@@ -22,7 +22,8 @@ loadPackages <- function(x) {
 # Load the packages
 loadPackages(c("tidyverse", "data.table", "randtoolbox", "sensitivity", 
                "boot", "parallel", "doParallel", "scales", "cowplot", 
-               "overlapping", "pawnr", "sensobol", "sensitivity", "wesanderson"))
+               "overlapping", "pawnr", "sensobol", "sensitivity", "wesanderson", 
+               "ggridge"))
 
 # Set checkpoint
 
@@ -922,6 +923,8 @@ A.sobol <- A[, k:= ifelse(Model == 1, 2, ifelse(Model == 2, 3, ifelse(Model == 3
 
 print(A.sobol)
 print(n)
+
+
 
 
 ## ----run_sobol_model, cache=TRUE, dependson=c("pawn_matrices", "sobol_matrix", "sobol_settings", "sobol_model")----

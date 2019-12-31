@@ -55,7 +55,19 @@ loadPackages <- function(x) {
 # Load the packages
 loadPackages(c("tidyverse", "data.table", "randtoolbox", "sensitivity", 
                "boot", "parallel", "doParallel", "scales", "cowplot", 
-               "overlapping", "pawnr", "sensobol", "sensitivity", "wesanderson"))
+               "overlapping", "pawnr", "sensobol", "sensitivity", "wesanderson", 
+               "ggridges"))
+
+# Create custom theme
+theme_AP <- function() {
+  theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.background = element_rect(fill = "transparent",
+                                           color = NA),
+          legend.key = element_rect(fill = "transparent",
+                                    color = NA))
+}
 
 # Set checkpoint
 
@@ -307,7 +319,7 @@ pawn.convergence <- lapply(pawn.ci, function(x) rbindlist(x, idcol = "N")) %>%
 
 ```{r export_sobol_pawn_convergence, cache=TRUE, dependson=c("pawn_convergence_dt", "sobol_convergence_dt")}
 
-# EXPORT SOBOL' AND PAWN CONVERGENCE RATES ------------------------------------
+# EXPORT SOBOL' AND PAWN CONVERGENCE RATES -------------------------------------
 
 fwrite(sobol.convergence, "sobol.convergence.csv")
 fwrite(pawn.convergence, "pawn.convergence.csv")
@@ -389,8 +401,8 @@ sobol.convergence[sensitivity == "STi"] %>%
 # PLOT SOBOL' AND PAWN INDICES ------------------------------------------------
 
 # Sobol' indices
-a <- plot_sobol(sobol.convergence[N==10000],
-                dummy = sobol.dummy.final[N==10000]) +
+a <- plot_sobol(sobol.convergence[N==4000],
+                dummy = sobol.dummy.final[N==4000]) +
   facet_grid(~model,
              scales = "free_x",
              space = "free_x") +
@@ -402,9 +414,9 @@ a <- plot_sobol(sobol.convergence[N==10000],
 legend <- get_legend(a + theme(legend.position = "top"))
 
 # PAWN indices
-b <- pawn.convergence[N==10000] %>%
+b <- pawn.convergence[N==4000] %>%
   plot_pawn(.) +
-  geom_rect(data = pawn.index.dummy[N==10000],
+  geom_rect(data = pawn.index.dummy[N==4000],
             aes(ymin = 0,
                 ymax = high.ci,
                 xmin = -Inf,
@@ -1123,6 +1135,48 @@ final.overlap
 rbindlist(final.overlap) %>%
   fwrite(., "sobol.overlap.csv")
 ```
+
+```{r new_uncertainty_plot, cache=TRUE, dev="tikz", dependson = c("sobol_uncertainty_dt", "pawn_uncertainty_dt"), fig.height=8}
+
+# NEW UNCERTAINTY PLOT --------------------------------------------------------
+
+a <- ggplot(AB.pawn, aes(value, parameter, fill = parameter)) + 
+  geom_density_ridges(rel_min_height = 0.01, alpha = 0.2, scale = 5) +
+  facet_grid(Model ~ setting, 
+             scales = "free", 
+             space = "free_y") +
+  labs(x = "PAWN", 
+       y = "") +
+  theme_AP() +
+  theme(axis.text.y = element_text(size = 6), 
+        legend.position = "none") 
+
+b <- ggplot(AB.sobol[!setting == "N"], aes(value, parameter, fill = parameter)) + 
+  geom_density_ridges(rel_min_height = 0.01, alpha = 0.2, scale = 5) +
+  facet_grid(Model ~ setting, 
+             scales = "free", 
+             space = "free_y") +
+  labs(x = "$S_{Ti}^*$", 
+       y = "") +
+  theme_AP() + 
+  theme(legend.position = "none",
+        axis.text.y=element_blank(), 
+        axis.ticks.y = element_blank())
+
+legend <- get_legend(a + theme(legend.position = "top") + 
+                       scale_fill_discrete(name = "Model input"))
+
+
+bottom <- plot_grid(a, b,
+          ncol = 2,
+          labels = "auto",
+          align = "h",
+          rel_widths = c(1, 0.38))
+
+plot_grid(legend, bottom, ncol = 1, rel_heights = c(0.2, 1))
+
+```
+
 
 ## Sensitivity analysis
 
