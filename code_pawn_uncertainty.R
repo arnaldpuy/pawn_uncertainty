@@ -23,7 +23,18 @@ loadPackages <- function(x) {
 loadPackages(c("tidyverse", "data.table", "randtoolbox", "sensitivity", 
                "boot", "parallel", "doParallel", "scales", "cowplot", 
                "overlapping", "pawnr", "sensobol", "sensitivity", "wesanderson", 
-               "ggridge"))
+               "ggridges"))
+
+# Create custom theme
+theme_AP <- function() {
+  theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.background = element_rect(fill = "transparent",
+                                           color = NA),
+          legend.key = element_rect(fill = "transparent",
+                                    color = NA))
+}
 
 # Set checkpoint
 
@@ -121,7 +132,7 @@ for(i in names(Y.pawn)) {
 }
 
 
-## ----model_uncertainty, cache=TRUE, dependson="output", dev="tikz"-------
+## ----model_uncertainty, cache=TRUE, dependson="output"-------------------
 
 # PLOT MODEL UNCERTAINTY ------------------------------------------------------
 
@@ -139,6 +150,7 @@ lapply(models, function(models) Y.pawn[[models]]$`10000`) %>%
   facet_wrap(~ variable,
              scales = "free_x",
              ncol = 4) +
+  scale_x_continuous(breaks = pretty_breaks(n = 3)) +
   theme_bw() +
   theme(aspect.ratio = 1,
         panel.grid.major = element_blank(),
@@ -265,7 +277,7 @@ pawn.convergence <- lapply(pawn.ci, function(x) rbindlist(x, idcol = "N")) %>%
 
 ## ----export_sobol_pawn_convergence, cache=TRUE, dependson=c("pawn_convergence_dt", "sobol_convergence_dt")----
 
-# EXPORT SOBOL' AND PAWN CONVERGENCE RATES ------------------------------------
+# EXPORT SOBOL' AND PAWN CONVERGENCE RATES -------------------------------------
 
 fwrite(sobol.convergence, "sobol.convergence.csv")
 fwrite(pawn.convergence, "pawn.convergence.csv")
@@ -345,8 +357,8 @@ sobol.convergence[sensitivity == "STi"] %>%
 # PLOT SOBOL' AND PAWN INDICES ------------------------------------------------
 
 # Sobol' indices
-a <- plot_sobol(sobol.convergence[N==10000],
-                dummy = sobol.dummy.final[N==10000]) +
+a <- plot_sobol(sobol.convergence[N==4000],
+                dummy = sobol.dummy.final[N==4000]) +
   facet_grid(~model,
              scales = "free_x",
              space = "free_x") +
@@ -358,9 +370,9 @@ a <- plot_sobol(sobol.convergence[N==10000],
 legend <- get_legend(a + theme(legend.position = "top"))
 
 # PAWN indices
-b <- pawn.convergence[N==10000] %>%
+b <- pawn.convergence[N==4000] %>%
   plot_pawn(.) +
-  geom_rect(data = pawn.index.dummy[N==10000],
+  geom_rect(data = pawn.index.dummy[N==4000],
             aes(ymin = 0,
                 ymax = high.ci,
                 xmin = -Inf,
@@ -925,8 +937,6 @@ print(A.sobol)
 print(n)
 
 
-
-
 ## ----run_sobol_model, cache=TRUE, dependson=c("pawn_matrices", "sobol_matrix", "sobol_settings", "sobol_model")----
 
 # RUN MODEL -------------------------------------------------------------------
@@ -1054,6 +1064,60 @@ final.overlap
 # Export results
 rbindlist(final.overlap) %>%
   fwrite(., "sobol.overlap.csv")
+
+
+## ----new_uncertainty_plot, cache=TRUE, dependson = c("sobol_uncertainty_dt", "pawn_uncertainty_dt"), fig.height=8.3----
+
+# NEW UNCERTAINTY PLOT --------------------------------------------------------
+
+AB.pawn <- fread("AB.pawn.csv")
+AB.sobol <- fread("AB.sobol.csv")
+
+AB.pawn.plot <- copy(AB.pawn)
+AB.sobol.plot <- copy(AB.sobol)
+
+AB.pawn.plot <- AB.pawn.plot[, setting:= ifelse(setting %in% "$max \\in \\theta$", "max %in% theta", 
+                          ifelse(setting %in% "$max \\notin \\theta$", "max %notin% theta", setting))] %>%
+  .[, Model:= ifelse(Model %in% "Sobol' G", "Sobol~G", Model)] %>%
+  .[, Model:= factor(Model, levels = c("Liu", "Ishigami", "Sobol~G", "Morris"))] %>%
+  .[, parameter:= factor(parameter, levels = paste("X", 1:20, sep = ""))]
+
+AB.sobol.plot <- AB.sobol.plot[, setting:= ifelse(setting %in% c("$N,\\theta$"), "list(N,theta)", setting)] %>%
+  .[, Model:= ifelse(Model %in% "Sobol' G", "Sobol~G", Model)] %>%
+  .[, Model:= factor(Model, levels = c("Liu", "Ishigami", "Sobol~G", "Morris"))] %>%
+  .[, parameter:= factor(parameter, levels = paste("X", 1:20, sep = ""))]
+  
+a <- ggplot(AB.pawn.plot, aes(parameter, value)) + 
+  geom_boxplot(outlier.colour = "red", 
+               outlier.size = 0.2) +
+  facet_grid(setting ~ Model, 
+             scales = "free", 
+             space = "free_x", 
+             labeller = label_parsed) +
+  labs(y = "PAWN", 
+       x = "") +
+  theme_AP() +
+  theme(axis.text.x = element_text(size = 6), 
+        legend.position = "none") 
+
+b <- ggplot(AB.sobol.plot[!setting == "N"], aes(parameter, value)) + 
+  geom_boxplot(outlier.colour = "red", 
+               outlier.size = 0.2) +
+  facet_grid(setting ~ Model, 
+             scales = "free", 
+             space = "free_x", 
+             labeller = label_parsed) +
+  labs(y = expression(italic(S)[Ti]^"*"), 
+       x = "") +
+  theme_AP() + 
+  theme(axis.text.x = element_text(size = 6), 
+        legend.position = "none") 
+
+plot_grid(a, b,
+          ncol = 1,
+          labels = "auto",
+          align = "h", 
+          rel_heights = c(1, 0.46))
 
 
 ## ----sobol_sensitivity_dt, cache=TRUE, dependson="extract_sobol_data"----
@@ -1257,6 +1321,91 @@ plot_grid(legend, bottom,
           rel_heights = c(0.21, 1))
 
 
+## ----global_sensitivities_new, cache=TRUE, fig.height=2.5, dependson=c("pawn_ci", "sobol_ci")----
+
+# PLOT NEW AGGREGATED SOBOL' INDICES ----------------------------------------------
+
+final.pawn.plot <- copy(final.pawn.ci)
+final.sobol.plot <- copy(final.sobol)
+
+paramets <- gsub(final.pawn.plot[, parameters], pattern ="\\", replacement="", fixed=TRUE) %>%
+  gsub(., pattern ="$", replacement="", fixed=TRUE) %>%
+  gsub(., pattern =".", replacement="~", fixed=TRUE)
+
+final.pawn.plot <- final.pawn.plot[, setting:= ifelse(setting %in% "$max \\in \\theta$", "max %in% theta", 
+                                                      ifelse(setting %in% "$max \\notin \\theta$", "max %notin% theta", setting))] %>%
+  .[, model:= ifelse(model %in% "Sobol' G", "Sobol~G", model)] %>%
+  .[, model:= factor(model, levels = c("Liu", "Ishigami", "Sobol~G", "Morris"))] %>%
+  .[, parameters:= cbind(paramets)] 
+
+paramets.sobol <- gsub(final.sobol.plot[, parameters], pattern ="\\", replacement="", fixed=TRUE) %>%
+  gsub(., pattern ="$", replacement="", fixed=TRUE) 
+
+final.sobol.plot <- final.sobol.plot[, Model:= ifelse(Model %in% "Sobol' G", "Sobol~G", Model)] %>%
+  .[, Model:= factor(Model, levels = c("Liu", "Ishigami", "Sobol~G", "Morris"))] %>%
+  .[, parameters:= cbind(paramets.sobol)] %>%
+  .[, setting:= ifelse(setting %in% "$N,\\theta$", "list(N, theta)", setting)]
+
+a <- final.pawn.plot[sensitivity == "Si" | sensitivity == "STi"] %>%
+  ggplot(., aes(parameters, original,
+                fill = sensitivity)) +
+  geom_boxplot(outlier.size = 0.2) +
+  labs(x = "", 
+       y = "Sobol' index") +
+  scale_fill_discrete(name = "Sobol' indices",
+                      labels = c(expression(S[italic(i)]),
+                                 expression(S[italic(T[i])]))) +
+  scale_x_discrete(labels = c(expression(italic(n)), 
+                              expression(italic(N)), 
+                              expression(theta),
+                              expression(epsilon))) +
+  scale_y_continuous(limits = c(0, 1)) +
+  theme_bw() +
+  facet_wrap(~ setting, 
+             labeller = label_parsed) +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        legend.background = element_rect(fill = "transparent", 
+                                         color = NA), 
+        legend.key = element_rect(fill = "transparent",  
+                                  color = NA),
+        legend.position = "none")
+
+legend <- get_legend(a + theme(legend.position = "top"))
+
+b <- final.sobol.plot[!setting == "N"] %>%
+  ggplot(., aes(parameters, original, fill = sensitivity)) +
+  geom_boxplot(outlier.size = 0.2) +
+  labs(x = "", 
+       y = "") +
+  scale_fill_discrete(name = expression(paste("Sobol'"~T[i])),
+                      labels = c(expression(S[italic(i)]),
+                                 expression(S[italic(T[i])]))) +
+  scale_x_discrete(labels = c(expression(italic(N)),
+                   expression(theta))) +
+  facet_wrap(~ setting, 
+             labeller = label_parsed) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        legend.background = element_rect(fill = "transparent", 
+                                         color = NA), 
+        legend.key = element_rect(fill = "transparent",  
+                                  color = NA),
+        legend.position = "none")
+
+bottom <- plot_grid(a, b, 
+                    ncol = 2, 
+                    align = "hv", 
+                    labels = "auto",
+                    rel_widths = c(2.58, 1))
+
+plot_grid(legend, bottom, 
+          ncol = 1, 
+          align = "hv", 
+          rel_heights = c(0.21, 1))
+
+
 ## ----plot_aggregated_Si, cache=TRUE, dev="tikz", fig.height=3, fig.width=3.1----
 
 # PLOT AGGREGATED SUM OF SI ---------------------------------------------------
@@ -1331,7 +1480,7 @@ plot_grid(legend, gg[[4]][[1]],
 lapply(2:3, function(x) gg[[4]][[x]])
 
 
-## ----merge_second_third, cahce=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.7----
+## ----merge_second_third, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.7----
 
 # MERGE SECOND AND THIRD-ORDER EFFECTS -----------------------------------------
 
@@ -1352,6 +1501,50 @@ for(i in second.third) {
                color = "red") +
     scale_y_continuous(breaks = pretty_breaks(n = 3)) +
     facet_wrap(~ setting) +
+    theme(legend.position = "none", 
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.text.x = element_text(angle = 45,
+                                     hjust = 1))
+}
+
+# PLOT SECOND AND THIRD-ORDER EFFECTS -----------------------------------------
+
+plot_grid(gg[[1]],
+          gg[[2]] + labs(x = "", y = ""),
+          ncol = 2,
+          labels = "auto",
+          align = "hv")
+
+
+## ----merge_second_third_new, cache=TRUE, dependson="pawn_ci", fig.height=2.4----
+
+# MERGE SECOND AND THIRD-ORDER EFFECTS -----------------------------------------
+
+final.pawn.plot <- final.pawn.plot[, parameters:= gsub(parameters, 
+                                                       pattern = "varepsilon", 
+                                                       replacement = "epsilon", 
+                                                       fixed = TRUE)]
+
+gg <- list()
+second.third <- c("Sij", "Sijk")
+for(i in second.third) {
+  gg[[i]] <- final.pawn.plot[sensitivity == i] %>%
+    ggplot(., aes(parameters, original)) +
+    geom_boxplot(outlier.size = 0.2) +
+    labs(x = NULL,
+         y = "Sobol' index") +
+    scale_fill_discrete(name = "Sobol' indices",
+                        labels = c(expression(S[italic(i)]),
+                                   expression(S[italic(T[i])]))) +
+    theme_bw() +
+    geom_hline(yintercept = 0,
+               lty = 2,
+               color = "red") +
+    scale_y_continuous(breaks = pretty_breaks(n = 3)) +
+    scale_x_discrete(labels = ggplot2:::parse_safe) +
+    facet_wrap(~ setting, 
+               labeller = label_parsed) +
     theme(legend.position = "none", 
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
