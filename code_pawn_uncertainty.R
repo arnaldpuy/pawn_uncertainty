@@ -1117,7 +1117,7 @@ plot_grid(a, b,
           ncol = 1,
           labels = "auto",
           align = "h", 
-          rel_heights = c(1, 0.46))
+          rel_heights = c(1, 0.42))
 
 
 ## ----sobol_sensitivity_dt, cache=TRUE, dependson="extract_sobol_data"----
