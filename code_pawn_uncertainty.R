@@ -1689,3 +1689,92 @@ plot_grid(legend, gg[[4]],
 sessionInfo()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+############################
+
+AB.pawn <- fread("AB.pawn.csv")
+AB.sobol <- fread("AB.sobol.csv")
+
+AB.pawn.plot <- copy(AB.pawn)
+AB.sobol.plot <- copy(AB.sobol)
+
+AB.pawn.plot <- AB.pawn.plot[, setting:= ifelse(setting %in% "$max \\in \\theta$", "max %in% theta", 
+                                                ifelse(setting %in% "$max \\notin \\theta$", "max %notin% theta", setting))] %>%
+  .[, Model:= ifelse(Model %in% "Sobol' G", "Sobol~G", Model)] %>%
+  .[, Model:= factor(Model, levels = c("Liu", "Ishigami", "Sobol~G", "Morris"))] %>%
+  .[, parameter:= factor(parameter, levels = paste("X", 1:20, sep = ""))]
+
+AB.sobol.plot <- AB.sobol.plot[, setting:= ifelse(setting %in% c("$N,\\theta$"), "list(N,theta)", setting)] %>%
+  .[, Model:= ifelse(Model %in% "Sobol' G", "Sobol~G", Model)] %>%
+  .[, Model:= factor(Model, levels = c("Liu", "Ishigami", "Sobol~G", "Morris"))] %>%
+  .[, parameter:= factor(parameter, levels = paste("X", 1:20, sep = ""))]
+
+# Create outlier function -----------------------------------------------------
+
+is_outlier <- function(x) {
+  return(x < quantile(x, 0.25) - 1.5 * IQR(x) | x > quantile(x, 0.75) + 1.5 * IQR(x))
+}
+
+
+AB.pawn.plot[, .(outlier:= ifelse(is_outlier(value) == TRUE, "YES", "NO"),
+                 ratio:= N/N),
+             .(setting, Model, parameter)]
+
+
+ggplot(AB.pawn.plot[outlier == "YES"], aes(n, N)) +
+  geom_point() + 
+  facet_grid(setting ~ Model, 
+             scales = "free", 
+             space = "free_x") +
+  labs(y = "PAWN", 
+       x = "") +
+  theme_AP()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

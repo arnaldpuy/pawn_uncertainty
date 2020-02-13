@@ -1167,6 +1167,7 @@ a <- ggplot(AB.pawn.plot, aes(parameter, value)) +
              labeller = label_parsed) +
   labs(y = "PAWN", 
        x = "") +
+  scale_y_continuous(limits = c(0, 1)) +
   theme_AP() +
   theme(axis.text.x = element_text(size = 6), 
         legend.position = "none") 
@@ -1180,6 +1181,7 @@ b <- ggplot(AB.sobol.plot[!setting == "N"], aes(parameter, value)) +
              labeller = label_parsed) +
   labs(y = expression(italic(S)[Ti]^"*"), 
        x = "") +
+  scale_y_continuous(limits = c(0, 1)) +
   theme_AP() + 
   theme(axis.text.x = element_text(size = 6), 
         legend.position = "none") 
@@ -1190,7 +1192,6 @@ plot_grid(a, b,
           align = "h", 
           rel_heights = c(1, 0.42))
 ```
-
 
 ## Sensitivity analysis
 
