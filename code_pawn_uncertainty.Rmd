@@ -407,6 +407,7 @@ a <- plot_sobol(sobol.convergence[N==4000],
   facet_grid(~model,
              scales = "free_x",
              space = "free_x") +
+  scale_y_continuous(limits = c(0, 1)) +
   labs(x = "",
        y = "Sobol' index") +
   theme(axis.text.x = element_text(size = 6),
@@ -425,6 +426,7 @@ b <- pawn.convergence[N==4000] %>%
             fill = "black",
             alpha = 0.1,
             inherit.aes = FALSE) +
+  scale_y_continuous(limits = c(0, 1)) +
   labs(x = "",
        y = "PAWN") +
   facet_grid(~ model,
@@ -1300,9 +1302,12 @@ ggplot(final.sobol, aes(parameters, original,
 # MERGE UNCERTAINTY IN PAWN AND SOBOL'-----------------------------------------
 
 a <- plot.uncertainty.pawn +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(0, 1))
 
 b <- AB.sobol[!setting == "N"] %>%
+  .[, Model:= factor(Model, levels = c("Liu", "Ishigami", "Sobol' G", "Morris"))] %>%
+  .[, parameter:= factor(parameter, levels = paste("X", 1:20, sep = ""))] %>%
   ggplot(., aes(value,
                 fill = parameter,
                 color = parameter)) +
@@ -1314,6 +1319,7 @@ b <- AB.sobol[!setting == "N"] %>%
   labs(x = "$S_{Ti}^*$",
        y = "Density") +
   scale_x_continuous(breaks = pretty_breaks(n = 3)) +
+  scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, 35)) +
   theme_bw() +
   theme(legend.position = "none", 
@@ -1760,6 +1766,73 @@ plot_grid(legend, gg[[4]],
           ncol = 1, 
           rel_heights = c(0.07, 1))
 ```
+
+# Extra plots II
+
+```{r assesment_outliers, cache=TRUE, dependson = c("sobol_uncertainty_dt", "pawn_uncertainty_dt"), dev="tikz"}
+
+# ASSESSMENT OF TI < 0 AND TI > 1 ---------------------------------------------
+
+# Values below 0
+a <- AB.sobol[!setting == "N" & value < 0] %>%
+  ggplot(., aes(value)) +
+  geom_histogram() + 
+  aes(y=stat(count)/sum(stat(count))) + 
+  facet_grid(setting ~ Model, 
+             scales = "free", 
+             space = "free_x") +
+  labs(y = "Percent", 
+       x = "") +
+  theme_AP()
+
+# Values above 0
+b <- AB.sobol[!setting == "N" & value > 1] %>%
+  ggplot(., aes(value)) +
+  geom_histogram() + 
+  aes(y=stat(count)/sum(stat(count))) + 
+  facet_grid(setting ~ Model, 
+             scales = "free", 
+             space = "free_x") +
+  labs(y = "Percent", 
+       x = expression(italic(S)[Ti]^"*")) +
+  theme_AP()
+
+plot_grid(a, b, 
+          ncol = 1,
+          labels = "auto")
+```
+
+```{r assesment_outliers2, cache=TRUE, dependson = c("sobol_uncertainty_dt", "pawn_uncertainty_dt"), fig.height=5.5, fig.width=6}
+
+# IDENTIFICTION OF OUTLIERS ---------------------------------------------------
+
+# Create outlier function
+is_outlier <- function(x) {
+  return(x < quantile(x, 0.25) - 1.5 * IQR(x) | x > quantile(x, 0.75) + 1.5 * IQR(x))
+}
+
+AB.pawn.plot <- AB.pawn.plot[, outlier:= ifelse(is_outlier(value) == TRUE, "YES", "NO"), 
+             .(setting, Model, parameter)]
+
+AB.pawn.plot <- AB.pawn.plot[, ratio:= N / n] %>%
+  .[, color:= ifelse(ratio <= 50, "(N / n) < 50", "(N / n) > 50")]
+
+AB.pawn.plot[outlier == "YES"] %>%
+  ggplot(., aes(n, N, color = color)) +
+  geom_point(size = 0.6) + 
+  facet_grid(setting ~ Model, 
+             scales = "free", 
+             space = "free_x", 
+             labeller = label_parsed) +
+  scale_color_discrete(name = "Value") +
+  labs(y = "N", 
+       x = "n") +
+  theme_AP() +
+  theme(legend.position = "top")
+```
+
+
+
 
 # Session information
 

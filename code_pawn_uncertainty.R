@@ -1,8 +1,8 @@
-## ----setup, include=FALSE------------------------------------------------
+## ----setup, include=FALSE-------------------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
 
-## ----preliminary steps, results="hide", message=FALSE, warning=FALSE-----
+## ----preliminary steps, results="hide", message=FALSE, warning=FALSE------------------
 
 # PRELIMINARY FUNCTIONS -------------------------------------------------------
 
@@ -46,7 +46,7 @@ checkpoint("2019-09-22",
            checkpointLocation = getwd())
 
 
-## ----settings, cache = TRUE----------------------------------------------
+## ----settings, cache = TRUE-----------------------------------------------------------
 
 # DEFINE SETTINGS -------------------------------------------------------------
 
@@ -73,7 +73,7 @@ liu_Mapply <- function(X) {
 }
 
 
-## ----sample_matrices, cache=TRUE, dependson="settings"-------------------
+## ----sample_matrices, cache=TRUE, dependson="settings"--------------------------------
 
 # CONSTRUCT SAMPLE MATRICES ---------------------------------------------------
 
@@ -100,7 +100,7 @@ for(i in names(B)) {
 }
 
 
-## ----output, cache=TRUE, dependson="sample_matrices"---------------------
+## ----output, cache=TRUE, dependson="sample_matrices"----------------------------------
 
 # COMPUTE MODEL OUTPUT --------------------------------------------------------
 
@@ -132,7 +132,7 @@ for(i in names(Y.pawn)) {
 }
 
 
-## ----model_uncertainty, cache=TRUE, dependson="output"-------------------
+## ----model_uncertainty, cache=TRUE, dependson="output"--------------------------------
 
 # PLOT MODEL UNCERTAINTY ------------------------------------------------------
 
@@ -161,7 +161,7 @@ lapply(models, function(models) Y.pawn[[models]]$`10000`) %>%
                                   color = NA))
 
 
-## ----sobol_indices, cache=TRUE, dependson="output"-----------------------
+## ----sobol_indices, cache=TRUE, dependson="output"------------------------------------
 
 # COMPUTE SOBOL' INDICES AND THEIR CONFIDENCE INTERVALS -----------------------
 
@@ -183,7 +183,7 @@ for(i in names(A)) {
 }
 
 
-## ----sobol_indices_dummy, cache=TRUE, dependson="sobol_indices"----------
+## ----sobol_indices_dummy, cache=TRUE, dependson="sobol_indices"-----------------------
 
 # SOBOL INDICES AND CONFIDENCE INTERVALS OF DUMMY PARAMETER -------------------
 
@@ -208,7 +208,7 @@ sobol.dummy.final <- lapply(sobol.dummy.ci, function(x) rbindlist(x, idcol = "N"
                                        "Sobol' G", "Morris"))]
 
 
-## ----sobol_convergence_dt, cache=TRUE, dependson="sobol_indices"---------
+## ----sobol_convergence_dt, cache=TRUE, dependson="sobol_indices"----------------------
 
 # SOBOL' CONVERGENCE ---------------------------------------------------------
 
@@ -224,7 +224,7 @@ sobol.convergence <- lapply(out.ci, function(x) rbindlist(x, idcol = "N")) %>%
   .[, .(model, N, parameters, original, low.ci, high.ci, diff, method, sensitivity)]
 
 
-## ----pawn_indices, cache=TRUE, dependson=c("sample_matrices", "output")----
+## ----pawn_indices, cache=TRUE, dependson=c("sample_matrices", "output")---------------
 
 # COMPUTE PAWN INDICES AND THEIR CONFIDENCE INTERVALS -------------------------
 
@@ -259,7 +259,7 @@ pawn.index.dummy <- lapply(pawn.index.dummy, function(x) rbindlist(x, idcol = "N
                                          "Sobol' G", "Morris")))]
 
 
-## ----pawn_convergence_dt, cache=TRUE, dependson="pawn_indices"-----------
+## ----pawn_convergence_dt, cache=TRUE, dependson="pawn_indices"------------------------
 
 # PAWN CONVERGENCE ------------------------------------------------------------
 
@@ -362,6 +362,7 @@ a <- plot_sobol(sobol.convergence[N==4000],
   facet_grid(~model,
              scales = "free_x",
              space = "free_x") +
+  scale_y_continuous(limits = c(0, 1)) +
   labs(x = "",
        y = "Sobol' index") +
   theme(axis.text.x = element_text(size = 6),
@@ -380,6 +381,7 @@ b <- pawn.convergence[N==4000] %>%
             fill = "black",
             alpha = 0.1,
             inherit.aes = FALSE) +
+  scale_y_continuous(limits = c(0, 1)) +
   labs(x = "",
        y = "PAWN") +
   facet_grid(~ model,
@@ -406,7 +408,7 @@ a
 b
 
 
-## ----pawn_model, cache=TRUE----------------------------------------------
+## ----pawn_model, cache=TRUE-----------------------------------------------------------
 
 # THE MODEL -------------------------------------------------------------------
 
@@ -474,7 +476,7 @@ model_pawn <- function(Model, N, n, epsilon, theta) {
 }
 
 
-## ----pawn_settings, cache=TRUE-------------------------------------------
+## ----pawn_settings, cache=TRUE--------------------------------------------------------
 
 # DEFINE SETTINGS --------------------------------------------------------------
 
@@ -492,7 +494,7 @@ parameters <- c("N", "n", "epsilon", "theta")
 models <- c("Liu", "Ishigami", "Sobol' G", "Morris")
 
 
-## ----pawn_matrix, cache=TRUE, dependson="pawn_settings"------------------
+## ----pawn_matrix, cache=TRUE, dependson="pawn_settings"-------------------------------
 
 # CREATION OF THE MATRICES ----------------------------------------------------
 
@@ -572,7 +574,7 @@ Y.pawn <- foreach(i=1:nrow(A.pawn),
 stopCluster(cl)
 
 
-## ----extract_pawn_data, cache=TRUE, dependson="run_pawn_model"-----------
+## ----extract_pawn_data, cache=TRUE, dependson="run_pawn_model"------------------------
 
 # EXTRACT DATA ----------------------------------------------------------------
 
@@ -590,7 +592,7 @@ for(i in seq_along(1:4)) {
 }
 
 
-## ----uncertainty_dt, cache=TRUE, dependson="extract_pawn_data"-----------
+## ----uncertainty_dt, cache=TRUE, dependson="extract_pawn_data"------------------------
 
 # DATASET FOR UNCERTAINTY ANALYSIS --------------------------------------------
 
@@ -612,7 +614,7 @@ AB.pawn <- lapply(dt.models, function(x)  {
                       ifelse(setting == "no.max", "$max \\notin \\theta$", "Optimum"))]
 
 
-## ----pawn_overlap, cache=TRUE, dependson="uncertainty_dt"----------------
+## ----pawn_overlap, cache=TRUE, dependson="uncertainty_dt"-----------------------------
 
 # CHECK OVERLAP ---------------------------------------------------------------
 
@@ -648,7 +650,7 @@ rbindlist(final.overlap) %>%
   fwrite(., "pawn.overlap.csv")
 
 
-## ----plot_pawn_uncertainty, cache=TRUE, dependson="uncertainty_dt", dev="tikz"----
+## ----plot_pawn_uncertainty, cache=TRUE, dependson="uncertainty_dt", dev="tikz"--------
 
 # PLOT UNCERTAINTY ------------------------------------------------------------
 
@@ -677,14 +679,14 @@ plot.uncertainty.pawn <- ggplot(AB.pawn, aes(value,
 plot.uncertainty.pawn
 
 
-## ----export_pawn, cache=TRUE, dependson="uncertainty_dt"-----------------
+## ----export_pawn, cache=TRUE, dependson="uncertainty_dt"------------------------------
 
 # EXPORT AB MATRIX FOR PAWN ---------------------------------------------------
 
 fwrite(AB.pawn, "AB.pawn.csv")
 
 
-## ----pawn_sensitivity_dt, cache=TRUE, dependson="extract_pawn_data"------
+## ----pawn_sensitivity_dt, cache=TRUE, dependson="extract_pawn_data"-------------------
 
 # DATASET FOR SENSITIVITY ANALYSIS --------------------------------------------
 
@@ -706,7 +708,7 @@ dt.pawn.sens <- lapply(dt.models, function(x)
 fwrite(dt.pawn.sens, "dt.pawn.sens.csv")
 
 
-## ----pawn_sensitivity, cache=TRUE, dependson="pawn_sensitivity_dt"-------
+## ----pawn_sensitivity, cache=TRUE, dependson="pawn_sensitivity_dt"--------------------
 
 # SENSITIVITY ANALYSIS --------------------------------------------------------
 
@@ -721,7 +723,7 @@ pawn.sensitivity <- dt.pawn.sens[, sobol_indices(Y,
                                  .(setting, Model, model.input)]
 
 
-## ----pawn_ci, cache=TRUE, dependson="pawn_sensitivity"-------------------
+## ----pawn_ci, cache=TRUE, dependson="pawn_sensitivity"--------------------------------
 
 # CONFIDENCE INTERVALS --------------------------------------------------------
 
@@ -817,7 +819,7 @@ plot_grid(up, bottom,
           rel_heights = c(0.21, 1))
 
 
-## ----sobol_model, cache=TRUE---------------------------------------------
+## ----sobol_model, cache=TRUE----------------------------------------------------------
 
 # THE MODEL -------------------------------------------------------------------
 
@@ -894,7 +896,7 @@ model_sobol <- function(Model, N, k, Theta) {
 }
 
 
-## ----sobol_settings, cache=TRUE------------------------------------------
+## ----sobol_settings, cache=TRUE-------------------------------------------------------
 
 # DEFINE SETTINGS -------------------------------------------------------------
 
@@ -902,7 +904,7 @@ model_sobol <- function(Model, N, k, Theta) {
 parameters.sobol <- c("N", "Theta")
 
 
-## ----sobol_matrix, cache=TRUE, dependson=c("pawn_settings", "sobol_settings")----
+## ----sobol_matrix, cache=TRUE, dependson=c("pawn_settings", "sobol_settings")---------
 
 # CREATION OF THE MATRICES ----------------------------------------------------
 
@@ -959,7 +961,7 @@ Y.sobol <- foreach(i=1:nrow(A.sobol),
 stopCluster(cl)
 
 
-## ----extract_sobol_data, cache=TRUE, dependson="run_sobol_model"---------
+## ----extract_sobol_data, cache=TRUE, dependson="run_sobol_model"----------------------
 
 # EXTRACT MODEL OUTPUT --------------------------------------------------------
 
@@ -977,7 +979,7 @@ for(i in seq_along(1:4)) {
 }
 
 
-## ----sobol_uncertainty_dt, cache=TRUE, dependson="extract_sobol_data"----
+## ----sobol_uncertainty_dt, cache=TRUE, dependson="extract_sobol_data"-----------------
 
 # DATASET FOR UNCERTAINTY ANALYSIS --------------------------------------------
 
@@ -1030,7 +1032,7 @@ AB.sobol %>%
                                   color = NA))
 
 
-## ----sobol_overlap, cache=TRUE, dependson="sobol_uncertainty_dt"---------
+## ----sobol_overlap, cache=TRUE, dependson="sobol_uncertainty_dt"----------------------
 
 # CHECK OVERLAP ---------------------------------------------------------------
 
@@ -1096,6 +1098,7 @@ a <- ggplot(AB.pawn.plot, aes(parameter, value)) +
              labeller = label_parsed) +
   labs(y = "PAWN", 
        x = "") +
+  scale_y_continuous(limits = c(0, 1)) +
   theme_AP() +
   theme(axis.text.x = element_text(size = 6), 
         legend.position = "none") 
@@ -1109,6 +1112,7 @@ b <- ggplot(AB.sobol.plot[!setting == "N"], aes(parameter, value)) +
              labeller = label_parsed) +
   labs(y = expression(italic(S)[Ti]^"*"), 
        x = "") +
+  scale_y_continuous(limits = c(0, 1)) +
   theme_AP() + 
   theme(axis.text.x = element_text(size = 6), 
         legend.position = "none") 
@@ -1120,7 +1124,7 @@ plot_grid(a, b,
           rel_heights = c(1, 0.42))
 
 
-## ----sobol_sensitivity_dt, cache=TRUE, dependson="extract_sobol_data"----
+## ----sobol_sensitivity_dt, cache=TRUE, dependson="extract_sobol_data"-----------------
 
 # DATASET FOR SENSITIVITY ANALYSIS --------------------------------------------
 
@@ -1144,7 +1148,7 @@ full.dataset.sobol <- lapply(dt.models, function(x)
 fwrite(full.dataset.sobol, "full.dataset.sobol.csv")
 
 
-## ----sobol_sensitivity, cache=TRUE, dependson="sobol_sensitivity_dt"-----
+## ----sobol_sensitivity, cache=TRUE, dependson="sobol_sensitivity_dt"------------------
 
 # SENSITIVITY ANALYSIS --------------------------------------------------------
 
@@ -1158,7 +1162,7 @@ sobol.sensitivity <- full.dataset.sobol[, sobol_indices(value,
                                         .(Model, parameter, setting)]
 
 
-## ----sobol_ci, cache=TRUE, dependson="sobol_sensitivity"-----------------
+## ----sobol_ci, cache=TRUE, dependson="sobol_sensitivity"------------------------------
 
 # CONFIDENCE INTERVALS --------------------------------------------------------
 
@@ -1223,9 +1227,12 @@ ggplot(final.sobol, aes(parameters, original,
 # MERGE UNCERTAINTY IN PAWN AND SOBOL'-----------------------------------------
 
 a <- plot.uncertainty.pawn +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(0, 1))
 
 b <- AB.sobol[!setting == "N"] %>%
+  .[, Model:= factor(Model, levels = c("Liu", "Ishigami", "Sobol' G", "Morris"))] %>%
+  .[, parameter:= factor(parameter, levels = paste("X", 1:20, sep = ""))] %>%
   ggplot(., aes(value,
                 fill = parameter,
                 color = parameter)) +
@@ -1237,6 +1244,7 @@ b <- AB.sobol[!setting == "N"] %>%
   labs(x = "$S_{Ti}^*$",
        y = "Density") +
   scale_x_continuous(breaks = pretty_breaks(n = 3)) +
+  scale_x_continuous(limits = c(0, 1)) +
   scale_y_continuous(limits = c(0, 35)) +
   theme_bw() +
   theme(legend.position = "none", 
@@ -1406,7 +1414,7 @@ plot_grid(legend, bottom,
           rel_heights = c(0.21, 1))
 
 
-## ----plot_aggregated_Si, cache=TRUE, dev="tikz", fig.height=3, fig.width=3.1----
+## ----plot_aggregated_Si, cache=TRUE, dev="tikz", fig.height=3, fig.width=3.1----------
 
 # PLOT AGGREGATED SUM OF SI ---------------------------------------------------
 
@@ -1517,7 +1525,7 @@ plot_grid(gg[[1]],
           align = "hv")
 
 
-## ----merge_second_third_new, cache=TRUE, dependson="pawn_ci", fig.height=2.4----
+## ----merge_second_third_new, cache=TRUE, dependson="pawn_ci", fig.height=2.4----------
 
 # MERGE SECOND AND THIRD-ORDER EFFECTS -----------------------------------------
 
@@ -1561,7 +1569,7 @@ plot_grid(gg[[1]],
           align = "hv")
 
 
-## ----sum_Si_weighted, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.5----
+## ----sum_Si_weighted, cache=TRUE, dependson="pawn_ci", dev="tikz", fig.height=2.5-----
 
 # PLOT AGGREGATED SOBOL' INDICES AFTER WEIGHTING ------------------------------
 
@@ -1682,99 +1690,72 @@ plot_grid(legend, gg[[4]],
           rel_heights = c(0.07, 1))
 
 
-## ----session_information-------------------------------------------------
+## ----assesment_outliers, cache=TRUE, dependson = c("sobol_uncertainty_dt", "pawn_uncertainty_dt"), dev="tikz"----
 
-# SESSION INFORMATION ---------------------------------------------------------
+# ASSESSMENT OF TI < 0 AND TI > 1 ---------------------------------------------
 
-sessionInfo()
+# Values below 0
+a <- AB.sobol[!setting == "N" & value < 0] %>%
+  ggplot(., aes(value)) +
+  geom_histogram() + 
+  aes(y=stat(count)/sum(stat(count))) + 
+  facet_grid(setting ~ Model, 
+             scales = "free", 
+             space = "free_x") +
+  labs(y = "Percent", 
+       x = "") +
+  theme_AP()
 
+# Values above 0
+b <- AB.sobol[!setting == "N" & value > 1] %>%
+  ggplot(., aes(value)) +
+  geom_histogram() + 
+  aes(y=stat(count)/sum(stat(count))) + 
+  facet_grid(setting ~ Model, 
+             scales = "free", 
+             space = "free_x") +
+  labs(y = "Percent", 
+       x = expression(italic(S)[Ti]^"*")) +
+  theme_AP()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+plot_grid(a, b, 
+          ncol = 1,
+          labels = "auto")
 
 
+## ----assesment_outliers2, cache=TRUE, dependson = c("sobol_uncertainty_dt", "pawn_uncertainty_dt"), fig.height=5.5, fig.width=6----
 
-############################
+# IDENTIFICTION OF OUTLIERS ---------------------------------------------------
 
-AB.pawn <- fread("AB.pawn.csv")
-AB.sobol <- fread("AB.sobol.csv")
-
-AB.pawn.plot <- copy(AB.pawn)
-AB.sobol.plot <- copy(AB.sobol)
-
-AB.pawn.plot <- AB.pawn.plot[, setting:= ifelse(setting %in% "$max \\in \\theta$", "max %in% theta", 
-                                                ifelse(setting %in% "$max \\notin \\theta$", "max %notin% theta", setting))] %>%
-  .[, Model:= ifelse(Model %in% "Sobol' G", "Sobol~G", Model)] %>%
-  .[, Model:= factor(Model, levels = c("Liu", "Ishigami", "Sobol~G", "Morris"))] %>%
-  .[, parameter:= factor(parameter, levels = paste("X", 1:20, sep = ""))]
-
-AB.sobol.plot <- AB.sobol.plot[, setting:= ifelse(setting %in% c("$N,\\theta$"), "list(N,theta)", setting)] %>%
-  .[, Model:= ifelse(Model %in% "Sobol' G", "Sobol~G", Model)] %>%
-  .[, Model:= factor(Model, levels = c("Liu", "Ishigami", "Sobol~G", "Morris"))] %>%
-  .[, parameter:= factor(parameter, levels = paste("X", 1:20, sep = ""))]
-
-# Create outlier function -----------------------------------------------------
-
+# Create outlier function
 is_outlier <- function(x) {
   return(x < quantile(x, 0.25) - 1.5 * IQR(x) | x > quantile(x, 0.75) + 1.5 * IQR(x))
 }
 
-
-AB.pawn.plot[, .(outlier:= ifelse(is_outlier(value) == TRUE, "YES", "NO"),
-                 ratio:= N/N),
+AB.pawn.plot <- AB.pawn.plot[, outlier:= ifelse(is_outlier(value) == TRUE, "YES", "NO"), 
              .(setting, Model, parameter)]
 
+AB.pawn.plot <- AB.pawn.plot[, ratio:= N / n] %>%
+  .[, color:= ifelse(ratio <= 50, "(N / n) < 50", "(N / n) > 50")]
 
-ggplot(AB.pawn.plot[outlier == "YES"], aes(n, N)) +
-  geom_point() + 
+AB.pawn.plot[outlier == "YES"] %>%
+  ggplot(., aes(n, N, color = color)) +
+  geom_point(size = 0.6) + 
   facet_grid(setting ~ Model, 
              scales = "free", 
-             space = "free_x") +
-  labs(y = "PAWN", 
-       x = "") +
-  theme_AP()
+             space = "free_x", 
+             labeller = label_parsed) +
+  scale_color_discrete(name = "Value") +
+  labs(y = "N", 
+       x = "n") +
+  theme_AP() +
+  theme(legend.position = "top")
 
 
+## ----session_information--------------------------------------------------------------
 
+# SESSION INFORMATION ---------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+sessionInfo()
 
 
