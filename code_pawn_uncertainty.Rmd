@@ -1832,8 +1832,6 @@ AB.pawn.plot[outlier == "YES"] %>%
 ```
 
 
-
-
 # Session information
 
 ```{r session_information}
